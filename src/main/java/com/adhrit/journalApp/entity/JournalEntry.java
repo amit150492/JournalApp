@@ -1,21 +1,28 @@
 package com.adhrit.journalApp.entity;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
-@Document(collection = "journal_entries")
-@Getter
+@Entity
+@Table(name = "journal_entries") // Maps this entity to the MySQL table
 @Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class JournalEntry {
+
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment ID
+    private Long id;
+
+    @Column(nullable = false) // Replaces @NonNull for database-level validation
     private String title;
+
+    @Column(columnDefinition = "TEXT") // Allows for longer content strings
     private String content;
+
     private LocalDateTime date;
 }

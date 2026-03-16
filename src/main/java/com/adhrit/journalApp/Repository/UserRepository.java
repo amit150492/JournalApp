@@ -1,9 +1,9 @@
 package com.adhrit.journalApp.Repository;
 
 import com.adhrit.journalApp.entity.JournalEntry;
+import com.adhrit.journalApp.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-
-public interface JournalEntryRepository extends JpaRepository<JournalEntry, String> {
-
+public interface UserRepository extends JpaRepository<User, String> {
+    User findByUsername(String username);
 }
