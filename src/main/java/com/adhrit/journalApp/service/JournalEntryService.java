@@ -21,22 +21,21 @@ public class JournalEntryService {
     @Transactional
     public void saveEntry(JournalEntry journalEntry, String userName) {
         try {
-            User user = userService.findByUsername(userName);
+            User user = userService.findByUserName(userName);
             if (user == null) {
                 throw new IllegalArgumentException("User not found: " + userName);
             }
             journalEntry.setDate(LocalDateTime.now());
             JournalEntry saved = journalEntryRepository.save(journalEntry);
             user.getJournalEntries().add(saved);
-            userService.saveNewUser(user);
+            userService.saveUser(user);
         } catch (Exception exception) {
-            System.err.println("[JournalEntryService] Failed to save journal entry: " + exception.getMessage());
-            throw new RuntimeException("Failed to save journal entry: " + exception.getMessage(), exception);
+            // Log and rollback (RuntimeException triggers rollback automatically)
+            throw new RuntimeException("Failed to save journal entry", exception);
         }
     }
 
     public void saveEntry(JournalEntry journalEntry) {
-
         journalEntryRepository.save(journalEntry);
     }
 
@@ -48,12 +47,29 @@ public class JournalEntryService {
         return journalEntryRepository.findById(id);
     }
 
-    public void deleteById(String id, String userName) {
-        User user = userService.findByUsername(userName);
-        if (user != null) {
-            user.getJournalEntries().removeIf(entry -> entry.getId().equals(id));
-            userService.saveNewUser(user);
+    @Transactional
+    public boolean deleteById(Long id, String userName) {
+        boolean removed = false;
+        try {
+            User user = userService.findByUserName(userName);
+            removed = user.getJournalEntries().removeIf(entry -> entry.getId().equals(id));
+            if (removed) {
+                userService.saveUser(user);
+                journalEntryRepository.deleteById(String.valueOf(id));
+            }
+        } catch (Exception exception) {
+            // Log and rollback (RuntimeException triggers rollback automatically)
+            throw new RuntimeException("Failed to delete journal entry", exception);
         }
-        journalEntryRepository.deleteById(id);
+        return removed;
+
+    }
+
+    public List<JournalEntry> findByUserName(String userName) {
+        User user = userService.findByUserName(userName);
+        if (user != null) {
+            return user.getJournalEntries();
+        }
+        return List.of(); // Return empty list if user not found
     }
 }

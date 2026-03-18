@@ -7,9 +7,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -19,18 +21,20 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username);
+        System.out.println("User from DB: " + user.getUsername() + " with Pass: " + user.getPassword());
         if (user != null) {
-            List<String> roles = user.getRoles();
-            if (roles == null || roles.isEmpty()) {
-                roles = Collections.singletonList("USER");
-            }
-            UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+
+            return org.springframework.security.core.userdetails.User.builder()
                     .username(user.getUsername())
                     .password(user.getPassword())
-                    .roles(roles.toArray(new String[0]))
+                    // Use authorities to pass the exact strings from your DB
+                    .authorities(user.getRoles().stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList()))
                     .build();
-            return userDetails;
+
         }
         throw new UsernameNotFoundException("User not found with username: " + username);
+
     }
 }
